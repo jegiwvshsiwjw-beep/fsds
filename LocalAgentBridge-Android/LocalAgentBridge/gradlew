@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+set -eu
+APP_HOME=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if command -v gradle >/dev/null 2>&1; then
+  exec gradle -p "$APP_HOME" "$@"
+fi
+GRADLE_VERSION=8.9
+CACHE_DIR="${HOME}/.gradle/local-agent-bridge"
+GRADLE_HOME_LOCAL="$CACHE_DIR/gradle-$GRADLE_VERSION"
+if [ ! -x "$GRADLE_HOME_LOCAL/bin/gradle" ]; then
+  mkdir -p "$CACHE_DIR"
+  ARCHIVE="$CACHE_DIR/gradle-$GRADLE_VERSION-bin.zip"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fL "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" -o "$ARCHIVE"
+  elif command -v wget >/dev/null 2>&1; then
+    wget "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" -O "$ARCHIVE"
+  else
+    echo "Instale curl ou wget para baixar Gradle $GRADLE_VERSION." >&2
+    exit 1
+  fi
+  unzip -oq "$ARCHIVE" -d "$CACHE_DIR"
+  rm -f "$ARCHIVE"
+fi
+exec "$GRADLE_HOME_LOCAL/bin/gradle" -p "$APP_HOME" "$@"
